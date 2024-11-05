@@ -1,8 +1,10 @@
 package br.com.alura.adopet.api.controller;
 
+import br.com.alura.adopet.api.dto.CadastroAbrigo;
+import br.com.alura.adopet.api.dto.CadastroPet;
+import br.com.alura.adopet.api.dto.ListagemAbrigo;
+import br.com.alura.adopet.api.dto.ListagemPet;
 import br.com.alura.adopet.api.exception.ValidacaoException;
-import br.com.alura.adopet.api.model.Abrigo;
-import br.com.alura.adopet.api.model.Pet;
 import br.com.alura.adopet.api.service.AbrigoService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
@@ -21,13 +23,13 @@ public class AbrigoController {
     private AbrigoService abrigoService;
 
     @GetMapping
-    public ResponseEntity<List<Abrigo>> listar() {
+    public ResponseEntity<List<ListagemAbrigo>> listar() {
         return ResponseEntity.ok(abrigoService.listar());
     }
 
     @PostMapping
     @Transactional
-    public ResponseEntity<String> cadastrar(@RequestBody @Valid Abrigo abrigo) {
+    public ResponseEntity<String> cadastrar(@RequestBody @Valid CadastroAbrigo abrigo) {
         try{
             abrigoService.cadastrar(abrigo);
             return ResponseEntity.ok().build();
@@ -37,7 +39,7 @@ public class AbrigoController {
     }
 
     @GetMapping("/{idOuNome}/pets")
-    public ResponseEntity<List<Pet>> listarPets(@PathVariable String idOuNome) {
+    public ResponseEntity<List<ListagemPet>> listarPets(@PathVariable String idOuNome) {
         try {
             return ResponseEntity.ok(abrigoService.listarPets(idOuNome));
         } catch (EntityNotFoundException enfe) {
@@ -47,7 +49,7 @@ public class AbrigoController {
 
     @PostMapping("/{idOuNome}/pets")
     @Transactional
-    public ResponseEntity<String> cadastrarPet(@PathVariable String idOuNome, @RequestBody @Valid Pet pet) {
+    public ResponseEntity<String> cadastrarPet(@PathVariable String idOuNome, @RequestBody @Valid CadastroPet pet) {
         try {
             abrigoService.cadastrarPet(idOuNome, pet);
             return ResponseEntity.ok().build();

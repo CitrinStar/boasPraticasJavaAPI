@@ -1,13 +1,18 @@
 package br.com.alura.adopet.api.service;
 
-import br.com.alura.adopet.api.exception.ValidacaoException;
+import br.com.alura.adopet.api.dto.CadastroAbrigo;
+import br.com.alura.adopet.api.dto.CadastroPet;
+import br.com.alura.adopet.api.dto.ListagemAbrigo;
+import br.com.alura.adopet.api.dto.ListagemPet;
 import br.com.alura.adopet.api.model.Abrigo;
 import br.com.alura.adopet.api.model.Pet;
 import br.com.alura.adopet.api.repository.AbrigoRepository;
+import br.com.alura.adopet.api.validation.ValidadorAbrigo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AbrigoService {
@@ -15,33 +20,38 @@ public class AbrigoService {
     @Autowired
     private AbrigoRepository repository;
 
-    public List<Abrigo> listar(){
-        return repository.findAll();
+    @Autowired
+    private List<ValidadorAbrigo> validadores;
+
+    public List<ListagemAbrigo> listar(){
+
+        return repository.findAll().stream()
+                .map(abrigo -> new ListagemAbrigo(abrigo.getId(), abrigo.getNome(), abrigo.getTelefone(), abrigo.getEmail()))
+                .collect(Collectors.toList());
     }
 
-    public void cadastrar(Abrigo abrigo){
-        boolean nomeJaCadastrado = repository.existsByNome(abrigo.getNome());
-        boolean telefoneJaCadastrado = repository.existsByTelefone(abrigo.getTelefone());
-        boolean emailJaCadastrado = repository.existsByEmail(abrigo.getEmail());
-
-        if (nomeJaCadastrado || telefoneJaCadastrado || emailJaCadastrado) {
-            throw new ValidacaoException("Dados já cadastrados para outro abrigo!");
-        } else {
-            repository.save(abrigo);
-        }
+    public void cadastrar(CadastroAbrigo abrigo){
+        validadores.forEach(validadorAbrigo -> validadorAbrigo.validar(abrigo));
+        repository.save(new Abrigo(abrigo.nome(), abrigo.telefone(), abrigo.email()));
     }
 
-    public List<Pet> listarPets(String idOuNome){
+    public List<ListagemPet> listarPets(String idOuNome){
         String regex = "\\d+";
         if(idOuNome.matches(regex)){
             Long id = Long.parseLong(idOuNome);
-            return repository.getReferenceById(id).getPets();
+            return repository.getReferenceById(id).getPets()
+                    .stream()
+                    .map(pet -> new ListagemPet(pet.getId(), pet.getTipo(), pet.getNome(), pet.getRaca(), pet.getIdade(), pet.getCor(), pet.getPeso()))
+                    .collect(Collectors.toList());
         }else{
-            return repository.findByNome(idOuNome).getPets();
+            return repository.findByNome(idOuNome).getPets()
+                    .stream()
+                    .map(pet -> new ListagemPet(pet.getId(), pet.getTipo(), pet.getNome(), pet.getRaca(), pet.getIdade(), pet.getCor(), pet.getPeso()))
+                    .collect(Collectors.toList());
         }
     }
 
-    public void cadastrarPet(String idOuNome, Pet pet){
+    public void cadastrarPet(String idOuNome, CadastroPet cadastroPet){
         String regex = "\\d+";
         Abrigo abrigo;
         if(idOuNome.matches(regex)){
@@ -50,8 +60,7 @@ public class AbrigoService {
         } else {
             abrigo = repository.findByNome(idOuNome);
         }
-        pet.setAbrigo(abrigo);
-        pet.setAdotado(false);
+        Pet pet = new Pet(cadastroPet, abrigo);
         abrigo.getPets().add(pet);
         repository.save(abrigo);
     }

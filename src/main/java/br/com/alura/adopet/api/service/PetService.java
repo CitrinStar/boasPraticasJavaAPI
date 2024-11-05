@@ -1,12 +1,13 @@
 package br.com.alura.adopet.api.service;
 
-import br.com.alura.adopet.api.model.Pet;
+import br.com.alura.adopet.api.dto.ListagemPet;
+import br.com.alura.adopet.api.exception.ValidacaoException;
 import br.com.alura.adopet.api.repository.PetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PetService {
@@ -14,14 +15,13 @@ public class PetService {
     @Autowired
     private PetRepository repository;
 
-    public List<Pet> listarPetsDisponiveis(){
-        List<Pet> pets = repository.findAll();
-        List<Pet> disponiveis = new ArrayList<>();
-        for (Pet pet : pets) {
-            if (pet.getAdotado() == false) {
-                disponiveis.add(pet);
-            }
+    public List<ListagemPet> listarPetsDisponiveis(){
+        try{
+            return repository.findByAdotadoFalse()
+                    .stream().map(pet -> new ListagemPet(pet.getId(), pet.getTipo(), pet.getNome(), pet.getRaca(), pet.getIdade(), pet.getCor(), pet.getPeso()))
+                    .collect(Collectors.toList());
+        } catch (NullPointerException exception) {
+            throw new ValidacaoException(exception.getMessage());
         }
-        return disponiveis;
     }
 }
